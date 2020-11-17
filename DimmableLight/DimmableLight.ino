@@ -19,6 +19,8 @@ const char * host = "";
 
 #define ID 202
 #define deviceType "dimmable"
+#define PWM_CHANNEL 1
+#define PWM_FREQ 512
 
 #define beaconID 203
 #define beaconMinor 3
@@ -160,8 +162,13 @@ void initBluetooth() {
 void setup() {
   Serial.begin(115200);
   Serial.println("Booting");
+  char hostname[32];
+  snprintf(hostname, 32, "ESP32-%d", ID);
   WiFi.mode(WIFI_STA);
+  WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
+  WiFi.setHostname(hostname);
   WiFi.begin(ssid, password);
+  
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
     Serial.println("Connection Failed! Rebooting...");
     delay(5000);
@@ -194,6 +201,7 @@ void setup() {
       else if (error == OTA_END_ERROR) Serial.println("End Failed");
     });
 
+  ArduinoOTA.setHostname(hostname);
   ArduinoOTA.begin();
 
   Serial.println("Ready");
