@@ -1,10 +1,7 @@
-#include <OneWire.h>
-#include <DallasTemperature.h>
 #include <WiFi.h>
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
-#include <analogWrite.h>
 #include <ArduinoJson.h>
 #include <WebSocketsClient.h>
 #include <BLEDevice.h>
@@ -21,6 +18,8 @@ const char * host = "";
 #define deviceType "dimmable"
 #define PWM_CHANNEL 1
 #define PWM_FREQ 512
+#define PWM_RES 8
+#define PWM_GPIO 4
 
 #define beaconID 203
 #define beaconMinor 3
@@ -161,6 +160,9 @@ void initBluetooth() {
 
 void setup() {
   Serial.begin(115200);
+  ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RES);
+  ledcAttachPin(PWM_GPIO, PWM_CHANNEL);
+
   Serial.println("Booting");
   char hostname[32];
   snprintf(hostname, 32, "ESP32-%d", ID);
@@ -218,5 +220,5 @@ void setup() {
 void loop() {
   ArduinoOTA.handle();
   webSocket.loop();
-  analogWrite(4, currentState); 
+  ledcWrite(PWM_CHANNEL, currentState);
 }

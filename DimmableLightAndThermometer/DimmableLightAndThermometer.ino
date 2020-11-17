@@ -4,7 +4,6 @@
 #include <ESPmDNS.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
-#include <analogWrite.h>
 #include <ArduinoJson.h>
 #include <WebSocketsClient.h>
 #include <BLEDevice.h>
@@ -19,6 +18,10 @@ const char * host = "";
 
 #define ID 305
 #define deviceType "dimmable"
+#define PWM_CHANNEL 1
+#define PWM_FREQ 512
+#define PWM_RES 8
+#define PWM_GPIO 4
 
 #define beaconID 306
 #define beaconMinor 2
@@ -199,8 +202,15 @@ void initBluetooth() {
 
 void setup() {
   Serial.begin(115200);
+  ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RES);
+  ledcAttachPin(PWM_GPIO, PWM_CHANNEL);
+  
   Serial.println("Booting");
+  char hostname[32];
+  snprintf(hostname, 32, "ESP32-%d", ID);
   WiFi.mode(WIFI_STA);
+  WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
+  WiFi.setHostname(hostname);
   WiFi.begin(ssid, password);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
     Serial.println("Connection Failed! Rebooting...");
@@ -234,6 +244,7 @@ void setup() {
       else if (error == OTA_END_ERROR) Serial.println("End Failed");
     });
 
+  ArduinoOTA.setHostname(hostname);
   ArduinoOTA.begin();
 
   Serial.println("Ready");
@@ -251,7 +262,7 @@ void setup() {
 void loop() {
   ArduinoOTA.handle();
   webSocket.loop();
-  analogWrite(4, currentState);
+  ledcWrite(PWM_CHANNEL, currentState);
   if (lastUpdate + 5 * 1000 < millis()) {
       lastUpdate = millis();
       sensors.requestTemperatures();
